@@ -54,19 +54,33 @@ const update = async(req, res, next) => {
     order_date: ?string
   } = Object.assign({}, req.body);
 
-  await Orders.update(updateData, { where: { id }});
-  res.status(200).send(`Order ${ id } has been updated`);
-
+  const order = await Orders.findOne({where: { id }});
+  if(order){
+    await Orders.update(updateData, { where: { id }});
+    res.status(200).send(`Order ${ id } has been updated`);
+    await next;
+  }
+  res.status(400).send(`Order ${ id } doesn't exist`);
   await next;
 };
 
 const del = async(req, res, next) => {
   const { id }: { id: string } = req.params;
 
-  await Orders.destroy({ where: { id }});
-  res.status(202). send({ info: `Order ${ id } has been removed!`});
-
-  await next;
+  try{
+    const order = await Orders.findOne({where: { id }});
+    if(!order){
+      res.status(404).send(`Order ${ id } doesn't exist`);
+      await next;
+    }
+    await Orders.destroy({ where: { id }});
+    res.status(202). send({ info: `Order ${ id } has been removed!`});
+  
+    await next;
+  }catch(e){
+    res.status(500).send()
+  }
+ 
 };
 
 export default {
